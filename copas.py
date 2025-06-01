@@ -2,42 +2,21 @@ import socket
 import sys
 
 import protocolo
-
-class Player:
-    def __init__(self, pId, cartas):
-        self.pId = pId
-        self.prox = (pId + 1) % 4
-        self.cartas = cartas
-        
-    def setCartas(self, cartas):
-        self.cartas = cartas
-    
-
-#================================================
-
-class Cores:
-    PRETO = "\033[38;2;0;0;0;48;2;255;255;255m"
-    VERM  = "\033[38;2;255;0;0;48;2;255;255;255m"
-    RESET = "\033[0m"
-
-deque = ["A♦", "2♦", "3♦", "4♦", "5♦", "6♦", "7♦", "8♦", "9♦", "10♦", "J♦", "Q♦", "K♦",
-         "A♠", "2♠", "3♠", "4♠", "5♠", "6♠", "7♠", "8♠", "9♠", "10♠", "J♠", "Q♠", "K♠",
-         "A♥", "2♥", "3♥", "4♥", "5♥", "6♥", "7♥", "8♥", "9♥", "10♥", "J♥", "Q♥", "K♥",
-         "A♣", "2♣", "3♣", "4♣", "5♣", "6♣", "7♣", "8♣", "9♣", "10♣", "J♣", "Q♣", "K♣"]
+import jogo
 
 #Local (por enquanto)
 anel = (("127.0.0.1", 25366), 
-         ("127.0.0.1", 25367), 
-         ("127.0.0.1", 25368), 
-         ("127.0.0.1", 25369))           
+        ("127.0.0.1", 25367), 
+        ("127.0.0.1", 25368), 
+        ("127.0.0.1", 25369))           
 
 if len(sys.argv) != 2:
     print("Uso: python3 copas.py <id do player>")
     sys.exit(1)
 
-eu = Player(int(sys.argv[1]), [])
+eu = jogo.Player(int(sys.argv[1]), [])
 
-if not ( 0 <= eu.pId < 4):
+if eu.pId not in range(4):
     print("Erro: Id invalida")
     print("Ids validas: 0, 1, 2, 3")
     sys.exit(1)
@@ -54,14 +33,17 @@ else:
     
 while jogo:
     if bastao:
-        msg = protocolo.montaMsg(protocolo.BAST, (eu.pId+1) % 4, [])
+        cartas = bytearray(13)
+        msg = protocolo.montaMsg(protocolo.BAST, (eu.pId+1) % 4, cartas)
         sock.sendto(msg, anel[(eu.pId+1) % 4])
         print("enviei") 
         bastao = 0  
     else:
         data, addr = sock.recvfrom(1024)
         print("chegou")
-        print(data)
+        mensagem = protocolo.desmontaMsg(data)
+        for i in range(4):
+            print(mensagem[i])
         # bastao = 1
 
     
