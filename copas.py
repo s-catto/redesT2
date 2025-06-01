@@ -1,6 +1,8 @@
 import socket
 import sys
 
+import protocolo
+
 class Player:
     def __init__(self, pId, cartas):
         self.pId = pId
@@ -46,27 +48,20 @@ sock.bind(anel[eu.pId])
 jogo = 1;
 
 if eu.pId == 0:
-    bastao = 1;
-    while jogo:
-        if bastao:
-            sock.sendto(b"eba!", anel[(eu.pId+3) % 4])
-            print("enviei") 
-            bastao = 0  
-        else:
-            data, addr = sock.recvfrom(1024)
-            print(data.decode("utf-8"))
-            bastao = 1
-
-else:
-    bastao = 0;
-    while jogo:
-        if bastao:
-            sock.sendto(b"eba!", anel[(eu.pId+3) % 4])
-            print("enviei")
-            bastao = 0
-        else:
-            data, addr = sock.recvfrom(1024) 
-            print(data.decode("utf-8"))   
-            bastao = 1
+    bastao = 1
+else: 
+    bastao = 0
+    
+while jogo:
+    if bastao:
+        msg = protocolo.montaMsg(protocolo.BAST, (eu.pId+1) % 4, [])
+        sock.sendto(msg, anel[(eu.pId+1) % 4])
+        print("enviei") 
+        bastao = 0  
+    else:
+        data, addr = sock.recvfrom(1024)
+        print("chegou")
+        print(data)
+        # bastao = 1
 
     
