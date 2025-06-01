@@ -34,7 +34,7 @@ else:
 while jogo:
     if bastao:
         cartas = bytearray(13)
-        msg = protocolo.montaMsg(protocolo.BAST, (eu.pId+1) % 4, cartas)
+        msg = protocolo.montaMsg((eu.pId+1) % 4, protocolo.FIM, cartas)
         sock.sendto(msg, anel[(eu.pId+1) % 4])
         print("enviei") 
         bastao = 0  

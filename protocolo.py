@@ -1,10 +1,14 @@
+#-------- / -- / --- / --- / --13bytes-- / --------
+# M_INI    dest tipo  ack   cartas        checksum
+
 M_INI = 126
 
 # tipos 
-BAST =  0
-DIST =  1
-JOGA =  2
-FIM  =  3
+CONN =  0
+BAST =  1
+DIST =  2
+JOGA =  3
+FIM  =  4
 
 TAM = 16
 
@@ -31,15 +35,15 @@ def checaChecksum (msg):
     return 0
         
 # monta msg baseado no tipo
-def montaMsg (tipo, dest, cartas):
+def montaMsg (dest, tipo, cartas):
     msg = bytearray(2)
     
     msg[0] = M_INI
     
-    msg[1] = tipo
-    msg[1] <<= 2
-    msg[1] += dest
-    msg[1] <<= 4    # espaco para ack
+    msg[1] = dest
+    msg[1] <<= 3
+    msg[1] += tipo
+    msg[1] <<= 3    # espaco para ack
     
     print(msg)
     
@@ -53,21 +57,25 @@ def montaMsg (tipo, dest, cartas):
     
     return msg      
 
-# desmonta msg, retorna 0 caso erro
-#               retorna tupla caso certo   
+# checa e desmonta msg, retorna 0 caso erro
+#                       retorna tupla caso certo   
 def desmontaMsg (msg):
-    checaChecksum(msg)
+    if msg[0] != M_INI:
+        return 0
+
+    if not checaChecksum(msg):
+        return 0
     
     msg1 = '{0:08b}'.format(msg[1])
     
-    tipo = int(msg1[0:2], 2)
+    dest = int(msg1[0:2], 2)
     
-    dest = int(msg1[2:4], 2)
+    tipo = int(msg1[2:5], 2)
     
-    ack = int(msg1[4:8], 2)   
+    ack = int(msg1[5:8], 2)   
        
     cartas = bytearray(13)
     for i in range(13):
         cartas[i] = msg[2 + i]
     
-    return (tipo, dest, ack, cartas)
+    return (dest, tipo, ack, cartas)
