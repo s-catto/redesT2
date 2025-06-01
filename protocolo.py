@@ -81,21 +81,18 @@ def desmontaMsg (msg):
     
     return (orig, dest, tipo, ack, cartas)
 
-def mandaMsg (sock, eu, destId, dest, tipo, cartas):
-    
-    msg = montaMsg(eu, destId, tipo, 0, cartas)
-    
-    ack = 0
-    while ack == 0:
-        sock.sendto(msg, dest)
-                
+def esperaMsg (sock, eu):
+    recebi = 0
+    while recebi == 0:
         data, addr = sock.recvfrom(1024)
         mensagem = desmontaMsg(data)
-        
-        if (mensagem != 0) & (mensagem[1] == eu) & (mensagem[0] == destId):
-            if (mensagem[3] == 1):
-                ack = 1
-    return        
+        if (mensagem != 0) & (mensagem[1] == eu):
+            recebi = 1 
+                
+    return mensagem
+
+    
+    
     
 # testa anel enquanto constroi 
 def conexao (sock, ant, eu, prox):
@@ -108,19 +105,34 @@ def conexao (sock, ant, eu, prox):
     proxId = (eu+1) % 4
     
     if eu != 3:
-        mandaMsg(sock, eu, proxId, prox, CONN, cartas)
-        print(f"conectei ao {proxId}")
+        msg = montaMsg(eu, proxId, CONN, 0, cartas)
+        while ack == 0:
+            sock.sendto(msg, prox)
             
-    if eu != 0:    
-        while recebi == 0:
             data, addr = sock.recvfrom(1024)
             mensagem = desmontaMsg(data)
-            if (mensagem != 0) & (mensagem[1] == eu) & (mensagem[0] == antId) & (mensagem[2] == 0):
-                recebi = 1
-                print(f"{antId} conectou")
-                msg = montaMsg(eu, antId, CONN, 1, cartas)
-                sock.sendto(msg, ant)
-    
+            
+            if (mensagem != 0) & (mensagem[1] == eu) & (mensagem[0] == proxId):
+                if (mensagem[3] == 1):
+                    ack = 1
+                    print(f"conectei ao {proxId}")
+        
+            
+    if eu != 0:
+        reme = -1
+        while reme != antId:
+            recebi = 0
+            while recebi == 0:
+                data, addr = sock.recvfrom(1024)
+                mensagem = desmontaMsg(data)
+                if (mensagem != 0) & (mensagem[1] == eu):
+                    recebi = 1 
+            reme = mensagem[0]  
+             
+        print(f"{antId} conectou")
+        
+        msg = montaMsg(eu, antId, CONN, 1, cartas)
+        sock.sendto(msg, ant)
     
     if eu != 0:       
         recebi = 0
@@ -140,17 +152,20 @@ def conexao (sock, ant, eu, prox):
             
                 
     elif eu == 0:
-        ack = 0
         msg = montaMsg(eu, 3, CONN, 0, cartas)
+        sock.sendto(msg, prox)
+        
+        ack = 0;
         while ack == 0:
             sock.sendto(msg, prox)
             
             data, addr = sock.recvfrom(1024)
             mensagem = desmontaMsg(data)
             
-            if (mensagem != 0) & (mensagem[1] == eu) & (mensagem[0] == antId) & (mensagem[3] == 1):
-                ack = 1
-                print("anel completo")
+            if (mensagem != 0) & (mensagem[1] == eu) & (mensagem[0] == 3):
+                if (mensagem[3] == 1):
+                    ack = 1
+                    print("anel completo")
     
     return 0
     

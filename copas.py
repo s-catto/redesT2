@@ -5,10 +5,10 @@ import protocolo
 import jogo
 
 #Local (por enquanto)
-anel = (("127.0.0.1", 25366), 
-        ("127.0.0.1", 25367), 
-        ("127.0.0.1", 25368), 
-        ("127.0.0.1", 25369))           
+anel = (("127.0.0.1", 25259), 
+        ("127.0.0.1", 25260), 
+        ("127.0.0.1", 25261), 
+        ("127.0.0.1", 25262))           
 
 if len(sys.argv) != 2:
     print("Uso: python3 copas.py <id do player>")
