@@ -133,8 +133,7 @@ def conexao (sock, ant, eu, prox):
         
         msg = montaMsg(eu, antId, CONN, 1, cartas)
         sock.sendto(msg, ant)
-    
-    if eu != 0:       
+        
         recebi = 0
         while recebi == 0:
             data, addr = sock.recvfrom(1024)
@@ -151,7 +150,7 @@ def conexao (sock, ant, eu, prox):
                     sock.sendto(data, prox)
             
                 
-    elif eu == 0:
+    else:
         msg = montaMsg(eu, 3, CONN, 0, cartas)
         sock.sendto(msg, prox)
         
