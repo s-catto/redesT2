@@ -14,7 +14,8 @@ if len(sys.argv) != 2:
     print("Uso: python3 copas.py <id do player>")
     sys.exit(1)
 
-eu = jogo.Player(int(sys.argv[1]), [])
+pId = int(sys.argv[1])
+eu = jogo.Player(pId, anel[(pId + 1)% 4], [])
 
 if eu.pId not in range(4):
     print("Erro: Id invalida")
@@ -31,19 +32,4 @@ if eu.pId == 0:
 else: 
     bastao = 0
     
-while jogo:
-    if bastao:
-        cartas = bytearray(13)
-        msg = protocolo.montaMsg((eu.pId+1) % 4, protocolo.FIM, cartas)
-        sock.sendto(msg, anel[(eu.pId+1) % 4])
-        print("enviei") 
-        bastao = 0  
-    else:
-        data, addr = sock.recvfrom(1024)
-        print("chegou")
-        mensagem = protocolo.desmontaMsg(data)
-        for i in range(4):
-            print(mensagem[i])
-        # bastao = 1
-
-    
+protocolo.conexao(sock, anel[(pId + 3)% 4], eu.pId, eu.prox)

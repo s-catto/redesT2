@@ -1,7 +1,7 @@
 class Player:
-    def __init__(self, pId, cartas):
+    def __init__(self, pId, prox, cartas):
         self.pId = pId
-        self.prox = (pId + 1) % 4
+        self.prox = prox
         self.cartas = cartas
         
     def setCartas(self, cartas):
