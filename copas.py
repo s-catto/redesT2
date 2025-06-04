@@ -29,17 +29,18 @@ sock.bind(anel[eu.pId])
    
 protocolo.conexao(sock, anel[(pId + 3)% 4], eu.pId, eu.prox)
 
-cartas = bytearray(13)
-if eu.pId == 2:
-    eu.bastao = 1
-    protocolo.mandaMsg(sock, eu.prox, eu.pId, 1, protocolo.BAST, cartas)
-    print("foi")
-else:
-    eu.bastao = 0
-    while not eu.bastao:
-        msgVem = protocolo.esperaMsg(sock, eu.pId, eu.prox) 
-        if msgVem:
-            print(msgVem)  
-
 # comeco do jogo
-jogo = 1;
+jogando = 1;
+
+if eu.bastao == 1:
+    jogo.distribuiCartas(sock, eu)
+    print("foi")
+    print(eu.cartas)
+
+else:
+    jogo.esperaCartas(sock, eu)
+    print("chegou")
+    print(eu.cartas)
+    
+    while 1:
+        protocolo.esperaMsg(sock, eu.pId, eu.prox)
