@@ -106,7 +106,6 @@ def mandaMsg (sock, prox, euId, destId, tipo, cartas):
              
         if nAck: 
             sock.sendto(msgVai, prox)
-            print(f"enviei p/ {destId}")
         
         
         data, addr = sock.recvfrom(1024)
@@ -115,10 +114,8 @@ def mandaMsg (sock, prox, euId, destId, tipo, cartas):
         if msgVem != 0:
             if (msgVem[ACK] == 1):
                 ack = 1
-                print("recebi ack")
             else:
                 nAck = 1
-                print("recebi nack")
         else:
                 nAck = 0
                 
@@ -128,14 +125,13 @@ def mandaMsg (sock, prox, euId, destId, tipo, cartas):
 # necessita loop externo
 # retorna o que eh pra voce e deu ack
 def esperaMsg (sock, euId, prox):
-    print("esperando")
+
     data, addr = sock.recvfrom(1024)
     msgVem = desmontaMsg(data)
     if msgVem != 0: 
         if (msgVem[DEST] == euId) & (msgVem[TIPO] > 0):
             msgVai = montaMsg(msgVem[ORIG], msgVem[DEST], msgVem[TIPO], 1, msgVem[CART])
             sock.sendto(msgVai, prox)
-            print("mandei ack")
             return msgVem
         else:
             sock.sendto(data, prox)
