@@ -33,23 +33,45 @@ protocolo.conexao(sock, anel[(pId + 3)% 4], eu.pId, eu.prox)
 
 # comeco do jogo
 jogando = 1
-rodada = 1
+fimRodada = 0
+cartasEmJogo = []
 
 while jogando:
-
+    eu.joguei = 0
+    cartasEmJogo = []
+        
     if eu.bastao:
         jogo.distribuiCartas(sock, eu)
-        print("foi")
-        jogo.imprimeCartas(eu.cartas)
+        jogo.imprimeCartas(eu.cartas, [1] * len(eu.cartas))
 
     else:
-        jogo.esperaCartas(sock, eu)
-        print("chegou")
-        jogo.imprimeCartas(eu.cartas)
-        
-    while rodada:
-        protocolo.esperaMsg(sock, eu.pId, eu.prox)
-            
-            #if eu.bastao:
-            #    jogo.jogada()
-            #    eu.passaBastao()
+        jogando, fimRodada = jogo.esperaCartas(sock, eu)
+        jogo.imprimeCartas(eu.cartas, [1] * len(eu.cartas))
+    
+    while not fimRodada:    
+        if eu.bastao == 1:
+            if not eu.joguei:
+                cartasEmJogo = jogo.jogada(sock, eu, cartasEmJogo)
+            else:
+                perdi = jogo.fimJogada(sock, eu, cartasEmJogo)
+                fimRodada = 1
+                if perdi:
+                    if eu.pontos >= 100:
+                        jogando = 0
+                        jogo.fimDeJogo(sock, eu)
+        else:
+            eu.bastao, fimRodada, cartas = jogo.esperaJogada(sock, eu)
+            if (cartas):
+                cartasEmJogo = cartas
+                print("Cartas em jogo:")
+                jogo.imprimeCartas(cartasEmJogo, [0] * len(cartasEmJogo))
+                
+            if eu.pontos >= 100:
+                jogando = 0
+                jogo.fimDeJogo(sock, eu)    
+
+    if eu.bastao:
+        print("Perdeu a rodada :(")
+        print("Pontos: {eu.pontos}")
+    else:
+        print("Ufa! Não perdeu a rodada!")               

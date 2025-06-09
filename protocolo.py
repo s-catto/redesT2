@@ -18,7 +18,8 @@ CONN =  0
 BAST =  1
 DIST =  2
 JOGA =  3
-FIM  =  4
+PTOS =  4
+FIM  =  5
 
 TAM = 16
 
@@ -58,7 +59,11 @@ def montaMsg (orig, dest, tipo, ack, cartas):
     msg[1] <<= 1
     msg[1] += ack
     
+    
     msg.extend(bytearray(cartas))
+    
+    for i in range(13-len(cartas)):
+        msg.append(52)
     
     msg.append(checksum(msg))
     
@@ -97,17 +102,11 @@ def mandaMsg (sock, prox, euId, destId, tipo, cartas):
     ack = 0
     nAck = 1
     
-    #tempoIni = time.time()
     while ack == 0:
-        #tempo = time.time() - tempoIni
-        #if tempo > 1:  
-        #    nAck = 1
-        #    tempoIni = time.time()
              
         if nAck: 
             sock.sendto(msgVai, prox)
-        
-        
+            
         data, addr = sock.recvfrom(1024)
         msgVem = desmontaMsg(data)
         
@@ -128,7 +127,7 @@ def esperaMsg (sock, euId, prox):
 
     data, addr = sock.recvfrom(1024)
     msgVem = desmontaMsg(data)
-    if msgVem != 0: 
+    if msgVem: 
         if (msgVem[DEST] == euId) & (msgVem[TIPO] > 0):
             msgVai = montaMsg(msgVem[ORIG], msgVem[DEST], msgVem[TIPO], 1, msgVem[CART])
             sock.sendto(msgVai, prox)
@@ -138,7 +137,12 @@ def esperaMsg (sock, euId, prox):
                 
     return 0
                 
-   
+def passaBastao(sock, eu, destId):
+    eu.bastao = 0
+    mandaMsg(sock, eu.prox, eu.pId, destId, BAST, [])
+    
+    return
+    
     
 # testa anel enquanto constroi 
 def conexao (sock, ant, euId, prox):
