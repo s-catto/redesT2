@@ -150,7 +150,7 @@ def passaBastao(sock, eu, destId):
     mandaMsg(sock, eu.prox, eu.pId, destId, BAST, [])
     
     return
-    
+      
     
 # testa anel enquanto constroi 
 def conexao (sock, ant, euId, prox):
