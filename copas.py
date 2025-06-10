@@ -63,7 +63,7 @@ while jogando:
                 print("Cartas da rodada:")
                 jogo.imprimeCartas(cartasEmJogo, [0] * 4)
             
-                perde, pontos = jogo.fimJogada(sock, eu, cartasEmJogo)
+                perde, pontos = jogo.fimRodada(sock, eu, cartasEmJogo)
                 
                 eu.resetJoguei()
                 cartasEmJogo = []

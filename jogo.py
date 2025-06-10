@@ -92,23 +92,7 @@ def distribuiCartas (sock, eu):
             eu.setCartas(cartas)       
     
     return
-    
-def esperaCartas (sock, eu):
-
-    while 1:
-        msgVem = protocolo.esperaMsg(sock, eu.pId, eu.prox)
-        if msgVem:
-            if msgVem[protocolo.TIPO] == protocolo.DIST:
-                eu.cartas = msgVem[protocolo.CART]
-                return (1, 0)
-                
-            elif msgVem[protocolo.TIPO] == protocolo.FIM:
-                print("GANHOU com {eu.pontos} pontos! :D")
-                print("PERDEDOR: {msgVem[protocolo.ORIG]} com {msgVem[protocolo.CART[0]]} pontos!")
-                return (0, 1)
-                  
-    return 
-   
+      
 def jogada (sock, eu, cartasEmJogo):
     print("Jogue uma carta: ")
     
@@ -151,39 +135,8 @@ def atualizaCartasEmJogo (msgVem):
             numCartas = i
             
     return cartasEmJogo[0:numCartas]
- 
-def esperaJogada (sock, eu):
-    msgVem = protocolo.esperaMsg(sock, eu.pId, eu.prox)
-    
-    if msgVem:
-        if msgVem[protocolo.TIPO] == protocolo.JOGA: 
-            cartasEmJogo = msgVem[protocolo.CART][0:4]
-            
-            numCartas = 4
-            for i in range(3, -1, -1):
-                if cartasEmJogo[i] == 52:
-                    numCartas = i
-                    
-            return 0, 0, cartasEmJogo[0:numCartas]
-            
-        elif msgVem[protocolo.TIPO] == protocolo.BAST:
-            return 1, 0, 0
-            
-        elif msgVem[protocolo.TIPO] == protocolo.PTOS:
-            if int(msgVem[protocolo.CART][0]) > 0:
-                eu.pontos += int(msgVem[protocolo.CART][0])
-                
-                while 1:
-                    msgVem = protocolo.esperaMsg(sock, eu, eu.prox)
-                    if msgVem: 
-                        if msgVem[protocolo.TIPO] == protocolo.BAST:
-                            return 1, 1, 0
-                    
-            return 0, 1, 0
-        
-    return 0, 0, 0
-        
-def fimJogada (sock, eu, cartasEmJogo):
+       
+def fimRodada (sock, eu, cartasEmJogo):
     puxada = naipe(cartasEmJogo[0])
     
     info = [0] * 6
