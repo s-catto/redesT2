@@ -9,6 +9,7 @@ import player
 
 PTOS_MAX = 100
 
+# naipes
 OURO = 0
 COPA = 1 
 SPDA = 2
@@ -28,6 +29,8 @@ MIQUE = 36
 
 deque = list(range(52))
 
+# se é possível traduzir pra int retorna 1
+#                           c.c. retorna 0
 def ehInt (isso):
     try:
         int(isso)
@@ -35,49 +38,59 @@ def ehInt (isso):
     except ValueError:
         return 0
 
+# retorna a naipe de uma carta
 def naipe (carta):
     return math.floor(carta / 13)
 
-def naipeCerta (minhas, puxada):
+# monta um vetor caracteristico composto xi = 1 caso a carta possa ser jogada
+#                                           = 0 c.c.
+def podeCartas (minhas, puxada):
     
+    # checa se eh a primeira rodada
     if len(minhas) == 13:
         primeira = 1
     else:
         primeira = 0
     
+    
+    # caso nao tenha naipe puxada (primeira jogada da rodada)
     if puxada < 0:
-        cartasNaipe = [1] * len(minhas)
+        cartasPode = [1] * len(minhas)
         if (primeira):
             for i in range(len(minhas)):
                 if (naipe(minhas[i]) == COPA | minhas[i] == MIQUE):
-                    cartasNaipe[i] = 0
+                    cartasPode[i] = 0
     
-    cartasNaipe = [0] * len(minhas)
-   
+    cartasPode = [0] * len(minhas)
+    
+    # xi = 1 caso seja da naipe puxada
     for i in range(len(minhas)):
         if puxada == naipe(minhas[i]):
             if not primeira:
-                cartasNaipe[i] = 1
+                cartasPode[i] = 1
             else:
-                if (naipe(minhas[i]) != COPA) & (minhas[i] != MIQUE):
-                    cartasNaipe[i] = 1    
-            
-    if sum(cartasNaipe) == 0:
+                if minhas[i] != MIQUE:
+                    cartasPode[i] = 1    
+    
+    # se nao eh possivel jogar nenhuma, pode jogal qualquer       
+    if sum(cartasPode) == 0:
         for i in range(len(minhas)):
             if not primeira:
-                cartasNaipe[i] = 1
+                cartasPode[i] = 1
             else:
                 if (naipe(minhas[i]) != COPA) & (minhas[i] != MIQUE):
-                    cartasNaipe[i] = 1 
+                    cartasPode[i] = 1 
     
-    return cartasNaipe
+    return cartasPode
 
-def imprimeCartas (minhas, cartasNaipe):
+# imprime cartas e indices com base no vetor caracteristico 
+def imprimeCartas (minhas, cartasPode):
 
     for i in range(len(minhas)):
     
         carta = cartas[minhas[i]]
         
+        # printa cor
         if (minhas[i] / 13) < 2:
             print(f"{VERM}", end="")
         else:
@@ -86,49 +99,62 @@ def imprimeCartas (minhas, cartasNaipe):
         print(f"%3s  {RESET}"% (carta), end=" ")
     
     print("")
-            
+    
+    # printa indice das cartas que podem ser jogadas       
     for i in range(len(minhas)):
-        if cartasNaipe[i]:
+        if cartasPode[i]:
             print(f" %2d   "% (i), end="")
         else:
             print("      ", end="")
         
     print("")
             
-    return naipeCerta   
+    return    
 
+# embaralha o deque
+# manda mensagens p/ os outros com suas respectivas cartas
+# atualiza as próprias cartas
 def distribuiCartas (sock, eu):
     
+    # embaralha
     random.shuffle(deque)
     
     for i in range(0,4):
         cartas = deque[i*13:(i*13)+13]
         if i != eu.pId:
+            # manda 
             protocolo.mandaMsg(sock, eu.prox, eu.pId, i, protocolo.DIST, cartas) 
         else:
+            # atualiza
             eu.setCartas(cartas)       
     
     return
-      
+
+# imprime as cartas do jogador
+# trata input
+# manda msg
+# atualiza cartas em jogo e cartas do jogador
 def jogada (sock, eu, cartasEmJogo):
     print("Jogue uma carta: ")
     
+    # se eh o primeiro a jogar na rodada, n tem naipe puxada
     if len(cartasEmJogo) > 0:
         puxada = naipe(cartasEmJogo[0])
     else:
         puxada = -1    
     
-    cartasNaipe = naipeCerta(eu.cartas, puxada)
+    # imprime
+    cartasPode = podeCartas(eu.cartas, puxada)
+    imprimeCartas(eu.cartas, cartasPode)
     
-    imprimeCartas(eu.cartas, cartasNaipe)
-    
+    # input
     inputBlz = 0
     while not inputBlz:
         carta = input()
         if (ehInt(carta)):
             carta = int(carta)
             if (0 <= carta < len(eu.cartas)):
-                if (cartasNaipe[carta]):
+                if (cartasPode[carta]):
                     inputBlz = 1
                 else:
                     print("Escolha uma das cartas da naipe puxada.")
@@ -137,8 +163,11 @@ def jogada (sock, eu, cartasEmJogo):
         else:
             print("Por favor insira um número")
     
+    
     cartasEmJogo.append(eu.cartas[carta])
+    
     protocolo.mandaMsg(sock, eu.prox, eu.pId, (eu.pId + 1) % 4, protocolo.JOGA, cartasEmJogo)
+    
     eu.cartas.remove(eu.cartas[carta])
     
     return cartasEmJogo
@@ -152,10 +181,13 @@ def atualizaCartasEmJogo (msgVem):
             numCartas = i
             
     return cartasEmJogo[0:numCartas]
-       
+
+# procedimentos de fim de rodada       
 def fimRodada (sock, eu, cartasEmJogo):
     puxada = naipe(cartasEmJogo[0])
     
+    # /  ----  /  -  /  -
+    #  cartas  perde  ptos
     info = [0] * 6
     
     # calcula pontos e perdedor
@@ -190,7 +222,8 @@ def fimRodada (sock, eu, cartasEmJogo):
                 
                 
     return perdedor, pontos
-    
+
+# manda msg tipo FIM p/ todos   
 def fimDeJogo (sock, eu):
     protocolo.mandaMsg(sock, eu.prox, eu.pId, (eu.pId + 1) % 4, protocolo.FIM, [eu.pontos])
     
