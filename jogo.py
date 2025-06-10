@@ -40,18 +40,35 @@ def naipe (carta):
 
 def naipeCerta (minhas, puxada):
     
+    if len(minhas) == 13:
+        primeira = 1
+    else:
+        primeira = 0
+    
     if puxada < 0:
-        return [1] * len(minhas)
+        cartasNaipe = [1] * len(minhas)
+        if (primeira):
+            for i in range(len(minhas)):
+                if (naipe(minhas[i]) == COPA | minhas[i] == MIQUE):
+                    cartasNaipe[i] = 0
     
     cartasNaipe = [0] * len(minhas)
    
     for i in range(len(minhas)):
         if puxada == naipe(minhas[i]):
-            cartasNaipe[i] = 1
+            if not primeira:
+                cartasNaipe[i] = 1
+            else:
+                if (naipe(minhas[i]) != COPA) & (minhas[i] != MIQUE):
+                    cartasNaipe[i] = 1    
             
     if sum(cartasNaipe) == 0:
         for i in range(len(minhas)):
-            cartasNaipe[i] = 1
+            if not primeira:
+                cartasNaipe[i] = 1
+            else:
+                if (naipe(minhas[i]) != COPA) & (minhas[i] != MIQUE):
+                    cartasNaipe[i] = 1 
     
     return cartasNaipe
 

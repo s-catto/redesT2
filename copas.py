@@ -52,7 +52,7 @@ while jogando:
                         print(f"Pontos: {eu.pontos}")
                         print("==============================================================================")
                         print("Suas cartas:")
-                        jogo.imprimeCartas(eu.cartas, [1] * len(eu.cartas))
+                        jogo.imprimeCartas(eu.cartas, [0] * len(eu.cartas))
                     
                     jogo.jogada(sock, eu, cartasEmJogo)
                     eu.setJoguei()
@@ -94,7 +94,7 @@ while jogando:
                 print("==========================================================================")
                 print("Suas cartas:")
                 eu.setCartas(msgVem[protocolo.CART])
-                jogo.imprimeCartas(eu.cartas, [1] * len(eu.cartas))
+                jogo.imprimeCartas(eu.cartas, [0] * len(eu.cartas))
                 
             elif msgVem[protocolo.TIPO] == protocolo.JOGA:
                 cartasEmJogo = jogo.atualizaCartasEmJogo(msgVem)
