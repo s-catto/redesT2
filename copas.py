@@ -1,6 +1,7 @@
 import socket
 import sys
 import os
+import time
 
 import protocolo
 import jogo
@@ -33,45 +34,106 @@ protocolo.conexao(sock, anel[(pId + 3)% 4], eu.pId, eu.prox)
 
 # comeco do jogo
 jogando = 1
-fimRodada = 0
 cartasEmJogo = []
 
 while jogando:
-    eu.joguei = 0
-    cartasEmJogo = []
         
     if eu.bastao:
-        jogo.distribuiCartas(sock, eu)
-        jogo.imprimeCartas(eu.cartas, [1] * len(eu.cartas))
-
-    else:
-        jogando, fimRodada = jogo.esperaCartas(sock, eu)
-        jogo.imprimeCartas(eu.cartas, [1] * len(eu.cartas))
-    
-    while not fimRodada:    
-        if eu.bastao == 1:
+        if eu.estado == player.MESTRE:
             if not eu.joguei:
-                cartasEmJogo = jogo.jogada(sock, eu, cartasEmJogo)
-            else:
-                perdi = jogo.fimJogada(sock, eu, cartasEmJogo)
-                fimRodada = 1
-                if perdi:
-                    if eu.pontos >= 100:
-                        jogando = 0
-                        jogo.fimDeJogo(sock, eu)
-        else:
-            eu.bastao, fimRodada, cartas = jogo.esperaJogada(sock, eu)
-            if (cartas):
-                cartasEmJogo = cartas
-                print("Cartas em jogo:")
-                jogo.imprimeCartas(cartasEmJogo, [0] * len(cartasEmJogo))
+                if eu.pontos > jogo.PTOS_MAX:
+                    jogo.fimDeJogo(sock, eu)
+                    jogando = 0
+                    espera = 0
                 
-            if eu.pontos >= 100:
-                jogando = 0
-                jogo.fimDeJogo(sock, eu)    
+                else:
+                    if len(eu.cartas) == 0:
+                        jogo.distribuiCartas(sock, eu)
+                        print(f"Pontos: {eu.pontos}")
+                        print("==============================================================================")
+                        print("Suas cartas:")
+                        jogo.imprimeCartas(eu.cartas, [1] * len(eu.cartas))
+                    
+                    jogo.jogada(sock, eu, cartasEmJogo)
+                    eu.setJoguei()
+        
+                    protocolo.passaBastao(sock, eu, (eu.pId + 1) % 4)
+                
+            else:
+                print("Cartas da rodada:")
+                jogo.imprimeCartas(cartasEmJogo, [0] * 4)
+            
+                perde, pontos = jogo.fimJogada(sock, eu, cartasEmJogo)
+                
+                eu.resetJoguei()
+                cartasEmJogo = []
+                
+                if perde != eu.pId:
+                    print("Tranquilo! :)")
+                    eu.setEstado(player.COMUM)
+                    protocolo.passaBastao(sock, eu, perde)
+                else:
+                    print(f"+ {pontos} pontos :(")
+                    
+                print()
+                print("=====================================")
+                print() 
+            
+        elif eu.estado == player.COMUM:
+            jogo.jogada(sock, eu, cartasEmJogo)
+            eu.setJoguei()
+            protocolo.passaBastao(sock, eu, (eu.pId + 1) % 4)
+            
 
-    if eu.bastao:
-        print("Perdeu a rodada :(")
-        print("Pontos: {eu.pontos}")
     else:
-        print("Ufa! Não perdeu a rodada!")               
+        msgVem = protocolo.esperaMsg(sock, eu.pId, eu.prox)
+        
+        if msgVem:
+            if msgVem[protocolo.TIPO] == protocolo.DIST:
+                print(f"Pontos: {eu.pontos}")
+                print("==========================================================================")
+                print("Suas cartas:")
+                eu.setCartas(msgVem[protocolo.CART])
+                jogo.imprimeCartas(eu.cartas, [1] * len(eu.cartas))
+                
+            elif msgVem[protocolo.TIPO] == protocolo.JOGA:
+                cartasEmJogo = jogo.atualizaCartasEmJogo(msgVem)
+                if not eu.joguei:
+                    print("Cartas em jogo:")
+                    jogo.imprimeCartas(cartasEmJogo, [0] * 4)
+            
+            elif msgVem[protocolo.TIPO] == protocolo.PTOS:
+                
+                cartasEmJogo = msgVem[protocolo.CART][0:4]
+                perde = int(msgVem[protocolo.CART][4])
+                
+                pontos = int(msgVem[protocolo.CART][5])
+                eu.atualizaPontos(pontos)
+                
+                print("Cartas da rodada:")
+                jogo.imprimeCartas(cartasEmJogo, [0] * 4)
+                
+                cartasEmJogo = []
+                eu.resetJoguei()
+                
+                if perde:
+                    eu.setEstado(player.MESTRE)
+                    print(f"+ {pontos} pontos :(")
+                else:
+                    print("Tranquilo! :)")
+                
+                print()
+                print("=====================================")
+                print()   
+            
+            elif msgVem[protocolo.TIPO] == protocolo.BAST:
+                eu.bastao = 1
+                
+            elif msgVem[protocolo.TIPO] == protocolo.FIM:
+                perde = msgVem[protocolo.ORIG]
+                print(f"NÂO PERDEU com {eu.pontos} pontos! :D")
+                print(f"PERDEDOR: {perde} com {msgVem[protocolo.CART][0]} pontos!")
+                jogando = 0
+                
+                protocolo.mandaMsg(sock, eu.prox, perde, (eu.pId + 1) % 4, msgVem[protocolo.TIPO], msgVem[protocolo.CART])
+                 

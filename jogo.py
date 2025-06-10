@@ -6,6 +6,9 @@ import math
 import protocolo
 import player
 
+
+PTOS_MAX = 100
+
 OURO = 0
 COPA = 1 
 SPDA = 2
@@ -44,6 +47,10 @@ def naipeCerta (minhas, puxada):
    
     for i in range(len(minhas)):
         if puxada == naipe(minhas[i]):
+            cartasNaipe[i] = 1
+            
+    if sum(cartasNaipe) == 0:
+        for i in range(len(minhas)):
             cartasNaipe[i] = 1
     
     return cartasNaipe
@@ -131,13 +138,20 @@ def jogada (sock, eu, cartasEmJogo):
     
     cartasEmJogo.append(eu.cartas[carta])
     protocolo.mandaMsg(sock, eu.prox, eu.pId, (eu.pId + 1) % 4, protocolo.JOGA, cartasEmJogo)
-    
-    eu.joguei = 1
-    
-    protocolo.passaBastao(sock, eu, (eu.pId + 1) % 4)
+    eu.cartas.remove(eu.cartas[carta])
     
     return cartasEmJogo
-    
+
+def atualizaCartasEmJogo (msgVem):
+    cartasEmJogo = msgVem[protocolo.CART][0:4]
+            
+    numCartas = 4
+    for i in range(3, -1, -1):
+        if cartasEmJogo[i] == 52:
+            numCartas = i
+            
+    return cartasEmJogo[0:numCartas]
+ 
 def esperaJogada (sock, eu):
     msgVem = protocolo.esperaMsg(sock, eu.pId, eu.prox)
     
@@ -172,37 +186,43 @@ def esperaJogada (sock, eu):
 def fimJogada (sock, eu, cartasEmJogo):
     puxada = naipe(cartasEmJogo[0])
     
+    info = [0] * 6
+    
+    # calcula pontos e perdedor
     pontos = 0
-    maior = 0
-    for i in range(1,4):
-        if (naipe(cartasEmJogo[i]) == puxada) & (cartasEmJogo[i] > cartasEmJogo[maior]): 
-            maior = i
+    perdedor = 0
+    for i in range(0,4):
+        info[i] = cartasEmJogo[i]
+    
+        if (naipe(cartasEmJogo[i]) == puxada) & (cartasEmJogo[i] > cartasEmJogo[perdedor]): 
+            perdedor = i
             
         if naipe(cartasEmJogo[i]) == COPA:
             pontos += 1
         elif cartasEmJogo[i] == MIQUE:
             pontos += 13
-            
+    
+    perdedor = (eu.pId + perdedor) % 4
+    
+    # manda mesagem com os pontos p/ o perdedor e com 0 p/ os outros        
     for i in range(4):
-        if i != eu.pId:  
-            if (eu.pId + maior) % 4 == i:  
-                protocolo.mandaMsg(sock, eu.prox, eu.pId, i, protocolo.PTOS, [pontos])
-            else:
-                protocolo.mandaMsg(sock, eu.prox, eu.pId, i, protocolo.PTOS, [0])
-            
+        if i == eu.pId:  
+            if perdedor == eu.pId:
+                eu.atualizaPontos(pontos)
+        elif i == perdedor:
+            info[4] = 1
+            info[5] = pontos
+            protocolo.mandaMsg(sock, eu.prox, eu.pId, i, protocolo.PTOS, info)
+            info[4] = 0
+            info[5] = 0
         else:
-            if maior == 0:
-                eu.pontos += pontos
-                return 1
-          
-    protocolo.passaBastao(sock, eu, (eu.pId + maior) % 4)
+            protocolo.mandaMsg(sock, eu.prox, eu.pId, i, protocolo.PTOS, info)
                 
-    return 0
+                
+    return perdedor, pontos
     
 def fimDeJogo (sock, eu):
-    for i in range(4):
-        if i != eu.pId:
-            protocolo.mandaMsg(sock, eu.prox, eu.pId, i, protocolo.FIM, [eu.pontos])
+    protocolo.mandaMsg(sock, eu.prox, eu.pId, (eu.pId + 1) % 4, protocolo.FIM, [eu.pontos])
     
-    print("PERDEU :( com {eu.pontos} pontos")
+    print(f"PERDEU :( com {eu.pontos} pontos")
     

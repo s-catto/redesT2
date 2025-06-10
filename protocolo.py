@@ -106,17 +106,20 @@ def mandaMsg (sock, prox, euId, destId, tipo, cartas):
              
         if nAck: 
             sock.sendto(msgVai, prox)
-            
-        data, addr = sock.recvfrom(1024)
-        msgVem = desmontaMsg(data)
         
-        if msgVem != 0:
-            if (msgVem[ACK] == 1):
-                ack = 1
+        if tipo != FIM:    
+            data, addr = sock.recvfrom(1024)
+            msgVem = desmontaMsg(data)
+            
+            if msgVem != 0:
+                if (msgVem[ACK] == 1):
+                    ack = 1
+                else:
+                    nAck = 1
             else:
-                nAck = 1
+                    nAck = 0
         else:
-                nAck = 0
+            ack = 1
                 
     return
     
@@ -128,12 +131,15 @@ def esperaMsg (sock, euId, prox):
     data, addr = sock.recvfrom(1024)
     msgVem = desmontaMsg(data)
     if msgVem: 
-        if (msgVem[DEST] == euId) & (msgVem[TIPO] > 0):
-            msgVai = montaMsg(msgVem[ORIG], msgVem[DEST], msgVem[TIPO], 1, msgVem[CART])
-            sock.sendto(msgVai, prox)
+        if FIM > msgVem[TIPO] > 0:
+            if (msgVem[DEST] == euId):
+                msgVai = montaMsg(msgVem[ORIG], msgVem[DEST], msgVem[TIPO], 1, msgVem[CART])
+                sock.sendto(msgVai, prox)
+                return msgVem
+        elif msgVem[TIPO] == FIM:
             return msgVem
-        else:
-            sock.sendto(data, prox)
+
+    sock.sendto(data, prox)
                 
     return 0
                 
@@ -168,7 +174,6 @@ def conexao (sock, ant, euId, prox):
             if (mensagem != 0) & (mensagem[DEST] == euId) & (mensagem[ORIG] == proxId):
                 if (mensagem[ACK] == 1):
                     ack = 1
-                    print(f"conectei ao {proxId}")
                 else:
                     nAck = 1
             else:
@@ -183,8 +188,6 @@ def conexao (sock, ant, euId, prox):
             mensagem = desmontaMsg(data)
             if (mensagem != 0) & (mensagem[DEST] == euId):
                 recebi = 1 
-             
-        print(f"{antId} conectou")
         
         msg = montaMsg(euId, antId, CONN, 1, cartas)
         sock.sendto(msg, ant)
@@ -197,12 +200,10 @@ def conexao (sock, ant, euId, prox):
             if (mensagem != 0) & (mensagem[TIPO] == 0):
                 if (euId == 3) & (mensagem[DEST] == euId) & (mensagem[ORIG] == proxId):
                     recebi = 1
-                    print("anel completo")
                     msg = montaMsg(euId, proxId, CONN, 1, cartas)
                     sock.sendto(msg, prox)
                 else:
                     recebi = 1
-                    print("anel completo")
                     sock.sendto(data, prox)
             
     # 0 espera ack de D, para confirmar integridade            
@@ -222,7 +223,6 @@ def conexao (sock, ant, euId, prox):
             if (mensagem != 0) & (mensagem[DEST] == euId) & (mensagem[ORIG] == 3):
                 if (mensagem[ACK] == 1):
                     ack = 1
-                    print("anel completo")
                 else:
                     nAck = 1
             else:
