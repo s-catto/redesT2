@@ -29,6 +29,8 @@ MIQUE = 36
 
 deque = list(range(52))
 
+
+
 # se é possível traduzir pra int retorna 1
 #                           c.c. retorna 0
 def ehInt (isso):
@@ -110,6 +112,8 @@ def imprimeCartas (minhas, cartasPode):
     print("")
             
     return    
+
+
 
 # embaralha o deque
 # manda mensagens p/ os outros com suas respectivas cartas

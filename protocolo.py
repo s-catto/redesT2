@@ -96,6 +96,7 @@ def desmontaMsg (msg):
     
 
 # não necessita loop externo
+# monta, manda e espera ack da msg
 def mandaMsg (sock, prox, euId, destId, tipo, cartas):
     msgVai = montaMsg(euId, destId, tipo, 0, cartas)
     
@@ -142,7 +143,8 @@ def esperaMsg (sock, euId, prox):
     sock.sendto(data, prox)
                 
     return 0
-                
+
+# atualiza bastao e o manda p/ dest                
 def passaBastao(sock, eu, destId):
     eu.bastao = 0
     mandaMsg(sock, eu.prox, eu.pId, destId, BAST, [])
@@ -178,7 +180,6 @@ def conexao (sock, ant, euId, prox):
                     nAck = 1
             else:
                 nAck = 0
-        
     
     # espera msg do anterior, envia ack        
     if euId != 0:
@@ -197,7 +198,7 @@ def conexao (sock, ant, euId, prox):
         while recebi == 0:
             data, addr = sock.recvfrom(1024)
             mensagem = desmontaMsg(data)
-            if (mensagem != 0) & (mensagem[TIPO] == 0):
+            if (mensagem != 0) & (mensagem[TIPO] == CONN):
                 if (euId == 3) & (mensagem[DEST] == euId) & (mensagem[ORIG] == proxId):
                     recebi = 1
                     msg = montaMsg(euId, proxId, CONN, 1, cartas)
